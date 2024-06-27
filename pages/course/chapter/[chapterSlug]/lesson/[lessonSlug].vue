@@ -22,7 +22,7 @@ useHead({
   title: title.value
 })
 
-const progress = useState<boolean[][]>('progress', () => {
+const progress = useLocalStorage<boolean[][]>('progress', () => {
   return []
 })
 
@@ -76,10 +76,11 @@ const toggleComplete = () => {
     </div>
     <VideoPlayer v-if="lesson.videoId" :video-id="lesson.videoId" />
     <p>{{ lesson.text }}</p>
-    <LessonCompleteButton
+    <!-- <ClientOnly></ClientOnly> -->
+      <LessonCompleteButton
       :model-value="isLessonComplete"
       @update:model-value="toggleComplete"
-    />
+      />
   </div>
 </template>
 
