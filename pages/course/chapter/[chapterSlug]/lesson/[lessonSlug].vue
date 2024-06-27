@@ -1,61 +1,76 @@
-<script setup lang='ts'>
-const course = useCourse()
-const route = useRoute()
+<script setup lang="ts">
+  const course = useCourse();
+  const route = useRoute();
 
-if (route.params.lessonSlug === '3-typing-component-events') {
-  console.log(route.params.paramthatdoesnotexistwhoops.capitalizeIsNotAMethod());
+  definePageMeta({
+    validate({ params }) {
+      const course = useCourse();
+      const chapter = course.chapters.find(
+        (chapter) => chapter.slug === params.chapterSlug
+      );
+
+      if (!chapter) {
+        throw createError({
+          statusCode: 404,
+          message: 'Chapter not found',
+        });
+      }
+
+      const lesson = chapter.lessons.find(
+        (lesson) => lesson.slug === params.lessonSlug
+      );
+
+      if (!lesson) {
+        throw createError({
+          statusCode: 404,
+          message: 'Lesson not found',
+        });
+      }
+
+      return true;
+    },
+  });
+
+  const chapter = computed(() => {
+    return course.chapters.find(
+      (chapter) => chapter.slug === route.params.chapterSlug
+    );
+  });
+
+  const lesson = computed(() => {
+    return chapter.value?.lessons.find(
+      (lesson) => lesson.slug === route.params.lessonSlug
+    );
+  });
   
-}
+  const title = computed(() => `${lesson.value?.title} - ${course.title}`);
 
-const chapter = computed(() => {
-  return course.chapters.find(
-    (chapter) => chapter.slug === route.params.chapterSlug
-  )
-})
+  useHead({
+    title: title.value,
+  });
 
-const lesson = computed(() => {
-  return chapter.value?.lessons.find(
-    (lesson) => lesson.slug === route.params.lessonSlug
-  )
-})
+  const progress = useLocalStorage<boolean[][]>('progress', () => {
+    return [];
+  });
 
-const title = computed(() => (
-  `${lesson.value?.title} - ${course.title}`
-))
+  const isLessonComplete = computed(() => {
+    if (!progress.value[chapter.value!.number - 1]) {
+      return false;
+    }
+    if (!progress.value[chapter.value!.number - 1][lesson.value!.number - 1]) {
+      return false;
+    }
+    return progress.value[chapter.value!.number - 1][lesson.value!.number - 1];
+  });
 
-useHead({
-  title: title.value
-})
-
-const progress = useLocalStorage<boolean[][]>('progress', () => {
-  return []
-})
-
-const isLessonComplete = computed(() => {
-  if (!progress.value[chapter.value!.number - 1]) {
-    return false;
-  }
-  if (
-    !progress.value[chapter.value!.number - 1][
-      lesson.value!.number - 1
-    ]
-  ) {
-    return false;
-  }
-  return progress.value[chapter.value!.number - 1][
-    lesson.value!.number - 1
-  ];
-});
-
-const toggleComplete = () => {
-  throw createError('Could not update')
-  if (!progress.value[chapter.value!.number - 1]) {
-    progress.value[chapter.value!.number - 1] = [];
-  }
-  progress.value[chapter.value!.number - 1][
-    lesson.value!.number - 1
-  ] = !isLessonComplete.value;
-};
+  const toggleComplete = () => {
+    throw createError('Could not update');
+    if (!progress.value[chapter.value!.number - 1]) {
+      progress.value[chapter.value!.number - 1] = [];
+    }
+    progress.value[chapter.value!.number - 1][lesson.value!.number - 1] =
+      !isLessonComplete.value;
+  };
 </script>
 
 <template>
@@ -83,13 +98,11 @@ const toggleComplete = () => {
     <VideoPlayer v-if="lesson.videoId" :video-id="lesson.videoId" />
     <p>{{ lesson.text }}</p>
     <!-- <ClientOnly></ClientOnly> -->
-      <LessonCompleteButton
+    <LessonCompleteButton
       :model-value="isLessonComplete"
       @update:model-value="toggleComplete"
-      />
+    />
   </div>
 </template>
 
-<style scoped>
-  
-</style>
+<style scoped></style>
